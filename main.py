@@ -29,6 +29,12 @@ st.markdown("""
     .stProgress .st-bo {
         background-color: #1f77b4;
     }
+    .highlight {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 2px solid #1f77b4;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -64,13 +70,13 @@ with st.sidebar:
     )
 
     market_factor = st.slider(
-        "Market Appreciation Factor",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.3,
-        step=0.1,
-        help="Expected market value increase factor"
-    )
+        "Market Appreciation (%)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=5,
+        help="Expected market value increase percentage"
+    ) / 100  # Convert percentage to decimal
 
     holding_period = st.slider(
         "Holding Period (months)",
@@ -104,22 +110,39 @@ with col2:
         market_factor
     )
 
-    # Display different price estimates
+    # Add scenario selection
+    selected_scenario = st.radio(
+        "Select Price Scenario",
+        options=['conservative', 'moderate', 'optimistic'],
+        index=1,  # Default to moderate
+        horizontal=True
+    )
+
+    # Display different price estimates with highlighting
     for scenario, value in property_values.items():
+        base_markup = 15 if scenario == 'conservative' else 25 if scenario == 'moderate' else 35
+        total_markup = base_markup + (market_factor * 100)
+
+        if scenario == selected_scenario:
+            st.markdown(f'<div class="highlight">', unsafe_allow_html=True)
+
         st.metric(
-            label=f"{scenario.title()} Estimate (+{15 if scenario == 'conservative' else 25 if scenario == 'moderate' else 35}%)",
+            label=f"{scenario.title()} Estimate (+{total_markup:.1f}%)",
             value=f"AED {value:,.2f}",
             delta=f"AED {value - initial_investment:,.2f}"
         )
+
+        if scenario == selected_scenario:
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ROI Analysis
 st.markdown("---")
 st.header("Investment Analysis")
 
-# Calculate ROI for moderate scenario
+# Calculate ROI for selected scenario
 roi_data = calculate_roi_with_split(
     initial_investment,
-    property_values['moderate'],
+    property_values[selected_scenario],
     total_cost,
     holding_period
 )
@@ -154,7 +177,7 @@ share_amount = st.number_input(
     "Investment Amount (AED)",
     min_value=100_000,
     max_value=int(total_investment),
-    value=int(total_investment * 0.2),
+    value=int(total_investment),  # Start at 100%
     step=50_000,
     help="Enter the amount you want to invest in this project"
 )
@@ -187,10 +210,10 @@ st.info(f"Effective Annual Return Rate: {share_data['effective_annual_return']:.
 st.markdown("---")
 st.header("Investment Projections")
 
-# Generate monthly projections (using moderate scenario)
+# Generate monthly projections for selected scenario
 monthly_values = generate_monthly_projection(
     initial_investment,
-    property_values['moderate'],
+    property_values[selected_scenario],
     holding_period
 )
 months = list(range(1, holding_period + 1))

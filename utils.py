@@ -15,9 +15,9 @@ def estimate_property_values(initial_value, total_cost, market_factor):
     base_value = initial_value + value_increase
 
     return {
-        'conservative': base_value * 1.15,  # +15%
-        'moderate': base_value * 1.25,      # +25%
-        'optimistic': base_value * 1.35     # +35%
+        'conservative': base_value * (1.15 + market_factor),  # +15% plus market factor
+        'moderate': base_value * (1.25 + market_factor),      # +25% plus market factor
+        'optimistic': base_value * (1.35 + market_factor)     # +35% plus market factor
     }
 
 def calculate_roi_with_split(initial_investment, final_value, total_cost, holding_period):
