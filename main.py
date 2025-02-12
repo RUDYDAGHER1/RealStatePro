@@ -31,9 +31,10 @@ st.markdown("""
     }
     .highlight {
         background-color: #f0f2f6;
-        padding: 1rem;
+        padding: 1.5rem;
         border-radius: 0.5rem;
         border: 2px solid #1f77b4;
+        margin-bottom: 1rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -125,15 +126,20 @@ with col2:
 
         if scenario == selected_scenario:
             st.markdown(f'<div class="highlight">', unsafe_allow_html=True)
-
-        st.metric(
-            label=f"{scenario.title()} Estimate (+{total_markup:.1f}%)",
-            value=f"AED {value:,.2f}",
-            delta=f"AED {value - initial_investment:,.2f}"
-        )
-
-        if scenario == selected_scenario:
+            st.markdown(f'### {scenario.title()} Estimate (+{total_markup:.1f}%)')
+            st.metric(
+                label="Final Value",
+                value=f"AED {value:,.2f}",
+                delta=f"AED {value - initial_investment:,.2f}"
+            )
             st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'### {scenario.title()} Estimate (+{total_markup:.1f}%)')
+            st.metric(
+                label="Final Value",
+                value=f"AED {value:,.2f}",
+                delta=f"AED {value - initial_investment:,.2f}"
+            )
 
 # ROI Analysis
 st.markdown("---")
