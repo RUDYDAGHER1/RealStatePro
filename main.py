@@ -4,14 +4,15 @@ import plotly.express as px
 import pandas as pd
 from utils import (
     calculate_renovation_cost,
-    estimate_property_value,
-    calculate_roi,
+    calculate_furnishing_cost,
+    estimate_property_values,
+    calculate_roi_with_split,
     generate_monthly_projection
 )
 
 # Page configuration
 st.set_page_config(
-    page_title="Real Estate Investment Simulator",
+    page_title="Real Estate Investment Simulator - UAE",
     page_icon="🏠",
     layout="wide"
 )
@@ -32,22 +33,22 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Header
-st.title("Real Estate Investment Simulator")
+st.title("Real Estate Investment Simulator - UAE")
 st.markdown("---")
 
 # Sidebar for input parameters
 with st.sidebar:
     st.header("Investment Parameters")
-    
+
     initial_investment = st.number_input(
-        "Initial Property Value ($)",
-        min_value=50000,
-        max_value=10000000,
-        value=300000,
-        step=10000,
-        help="Enter the current property value"
+        "Initial Property Value (AED)",
+        min_value=200_000,
+        max_value=50_000_000,
+        value=1_000_000,
+        step=100_000,
+        help="Enter the current property value in AED"
     )
-    
+
     square_feet = st.number_input(
         "Property Size (sq ft)",
         min_value=500,
@@ -55,13 +56,13 @@ with st.sidebar:
         value=1500,
         step=100
     )
-    
+
     quality_level = st.selectbox(
-        "Renovation Quality Level",
+        "Quality Level",
         options=['basic', 'medium', 'luxury'],
-        help="Choose the quality level of renovations"
+        help="Choose the quality level for renovation and furnishing"
     )
-    
+
     market_factor = st.slider(
         "Market Appreciation Factor",
         min_value=0.0,
@@ -70,7 +71,7 @@ with st.sidebar:
         step=0.1,
         help="Expected market value increase factor"
     )
-    
+
     holding_period = st.slider(
         "Holding Period (months)",
         min_value=1,
@@ -83,42 +84,51 @@ with st.sidebar:
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Renovation Budget")
+    st.subheader("Cost Breakdown")
     renovation_cost = calculate_renovation_cost(square_feet, quality_level)
-    
-    # Display renovation costs
+    furnishing_cost = calculate_furnishing_cost(square_feet, quality_level)
+
+    # Display costs
     st.metric(
-        label="Estimated Renovation Cost",
-        value=f"${renovation_cost:,.2f}"
+        label="Renovation Cost",
+        value=f"AED {renovation_cost:,.2f}"
     )
-    
-    # Cost breakdown
-    cost_per_sqft = renovation_cost / square_feet
-    st.info(f"Cost per sq ft: ${cost_per_sqft:.2f}")
+    st.metric(
+        label="Furnishing Cost",
+        value=f"AED {furnishing_cost:,.2f}"
+    )
+
+    # Cost per sqft
+    total_cost_per_sqft = (renovation_cost + furnishing_cost) / square_feet
+    st.info(f"Total Cost per sq ft: AED {total_cost_per_sqft:.2f}")
 
 with col2:
-    st.subheader("Property Value Estimation")
-    final_value = estimate_property_value(
+    st.subheader("Estimated Sale Prices")
+    property_values = estimate_property_values(
         initial_investment,
         renovation_cost,
+        furnishing_cost,
         market_factor
     )
-    
-    # Display estimated final value
-    st.metric(
-        label="Estimated Final Value",
-        value=f"${final_value:,.2f}",
-        delta=f"${final_value - initial_investment:,.2f}"
-    )
+
+    # Display different price estimates
+    for scenario, value in property_values.items():
+        st.metric(
+            label=f"{scenario.title()} Estimate (+{15 if scenario == 'conservative' else 25 if scenario == 'moderate' else 35}%)",
+            value=f"AED {value:,.2f}",
+            delta=f"AED {value - initial_investment:,.2f}"
+        )
 
 # ROI Analysis
 st.markdown("---")
-st.header("ROI Analysis")
+st.header("Investment Analysis")
 
-profit, annual_roi = calculate_roi(
+# Calculate ROI for moderate scenario
+roi_data = calculate_roi_with_split(
     initial_investment,
-    final_value,
+    property_values['moderate'],
     renovation_cost,
+    furnishing_cost,
     holding_period
 )
 
@@ -126,30 +136,36 @@ col3, col4, col5 = st.columns(3)
 
 with col3:
     st.metric(
-        label="Total Profit",
-        value=f"${profit:,.2f}"
+        label="Investor's Profit (88%)",
+        value=f"AED {roi_data['investor_profit']:,.2f}"
     )
 
 with col4:
     st.metric(
-        label="Annual ROI",
-        value=f"{annual_roi:.2f}%"
+        label="Company's Profit (12%)",
+        value=f"AED {roi_data['company_profit']:,.2f}"
     )
 
 with col5:
     st.metric(
-        label="Total Investment Required",
-        value=f"${initial_investment + renovation_cost:,.2f}"
+        label="Annual ROI",
+        value=f"{roi_data['annual_roi']:.2f}%"
     )
+
+# Total Investment Required
+st.metric(
+    label="Total Investment Required",
+    value=f"AED {initial_investment + renovation_cost + furnishing_cost:,.2f}"
+)
 
 # Visualizations
 st.markdown("---")
 st.header("Investment Projections")
 
-# Generate monthly projections
+# Generate monthly projections (using moderate scenario)
 monthly_values = generate_monthly_projection(
     initial_investment,
-    final_value,
+    property_values['moderate'],
     holding_period
 )
 months = list(range(1, holding_period + 1))
@@ -167,7 +183,7 @@ fig1.add_trace(go.Scatter(
 fig1.update_layout(
     title="Projected Property Value Over Time",
     xaxis_title="Month",
-    yaxis_title="Property Value ($)",
+    yaxis_title="Property Value (AED)",
     hovermode='x',
     height=500
 )
@@ -175,9 +191,15 @@ fig1.update_layout(
 st.plotly_chart(fig1, use_container_width=True)
 
 # Pie chart for cost breakdown
+costs_data = pd.DataFrame({
+    'Category': ['Initial Investment', 'Renovation Cost', 'Furnishing Cost'],
+    'Amount': [initial_investment, renovation_cost, furnishing_cost]
+})
+
 fig2 = px.pie(
-    values=[initial_investment, renovation_cost],
-    names=['Initial Investment', 'Renovation Cost'],
+    costs_data,
+    values='Amount',
+    names='Category',
     title='Investment Breakdown'
 )
 fig2.update_traces(
