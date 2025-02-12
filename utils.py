@@ -9,6 +9,23 @@ def calculate_total_cost(square_feet, quality_level):
     }
     return square_feet * base_costs_aed[quality_level]
 
+def calculate_dubai_fees(property_value):
+    """Calculate Dubai property related fees."""
+    dld_fee = property_value * 0.04  # 4% Dubai Land Department fee
+    broker_fee = property_value * 0.02  # 2% broker fee
+    title_deed_fee = 430  # Fixed amount
+    conveyance_fee = 7350  # Fixed amount
+
+    total_fees = dld_fee + broker_fee + title_deed_fee + conveyance_fee
+
+    return {
+        'dld_fee': dld_fee,
+        'broker_fee': broker_fee,
+        'title_deed_fee': title_deed_fee,
+        'conveyance_fee': conveyance_fee,
+        'total_fees': total_fees
+    }
+
 def estimate_property_values(initial_value, total_cost, market_factor):
     """Estimate property values after renovation with different markup scenarios."""
     value_increase = total_cost * (1 + market_factor)

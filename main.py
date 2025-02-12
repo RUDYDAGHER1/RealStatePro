@@ -7,7 +7,8 @@ from utils import (
     estimate_property_values,
     calculate_roi_with_split,
     generate_monthly_projection,
-    calculate_share_investment
+    calculate_share_investment,
+    calculate_dubai_fees
 )
 
 # Page configuration
@@ -28,13 +29,6 @@ st.markdown("""
     }
     .stProgress .st-bo {
         background-color: #1f77b4;
-    }
-    .highlight {
-        background-color: #f0f2f6;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        border: 2px solid #1f77b4;
-        margin-bottom: 1rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -119,20 +113,18 @@ with col2:
         horizontal=True
     )
 
-    # Display different price estimates with highlighting
+    # Display different price estimates
     for scenario, value in property_values.items():
         base_markup = 15 if scenario == 'conservative' else 25 if scenario == 'moderate' else 35
         total_markup = base_markup + (market_factor * 100)
 
         if scenario == selected_scenario:
-            st.markdown(f'<div class="highlight">', unsafe_allow_html=True)
-            st.markdown(f'### {scenario.title()} Estimate (+{total_markup:.1f}%)')
+            st.markdown(f'### **{scenario.title()} Estimate (+{total_markup:.1f}%)**')
             st.metric(
                 label="Final Value",
                 value=f"AED {value:,.2f}",
                 delta=f"AED {value - initial_investment:,.2f}"
             )
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown(f'### {scenario.title()} Estimate (+{total_markup:.1f}%)')
             st.metric(
@@ -140,6 +132,39 @@ with col2:
                 value=f"AED {value:,.2f}",
                 delta=f"AED {value - initial_investment:,.2f}"
             )
+
+# Dubai Property Fees
+st.markdown("---")
+st.header("Dubai Property Fees")
+dubai_fees = calculate_dubai_fees(property_values[selected_scenario])
+
+col9, col10, col11, col12 = st.columns(4)
+
+with col9:
+    st.metric(
+        label="DLD Fee (4%)",
+        value=f"AED {dubai_fees['dld_fee']:,.2f}"
+    )
+
+with col10:
+    st.metric(
+        label="Broker Fee (2%)",
+        value=f"AED {dubai_fees['broker_fee']:,.2f}"
+    )
+
+with col11:
+    st.metric(
+        label="Title Deed Fee",
+        value=f"AED {dubai_fees['title_deed_fee']:,.2f}"
+    )
+
+with col12:
+    st.metric(
+        label="Conveyance Fee",
+        value=f"AED {dubai_fees['conveyance_fee']:,.2f}"
+    )
+
+st.info(f"Total Fees: AED {dubai_fees['total_fees']:,.2f}")
 
 # ROI Analysis
 st.markdown("---")
