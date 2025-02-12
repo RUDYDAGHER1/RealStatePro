@@ -294,3 +294,6 @@ st.caption(
     "Disclaimer: This is a simulation tool. Actual results may vary. "
     "Please consult with real estate professionals before making investment decisions."
 )
+if __name__ == "__main__":
+    import os
+    os.system("streamlit run main.py --server.port=8501 --server.address=0.0.0.0")
