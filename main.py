@@ -3,11 +3,11 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 from utils import (
-    calculate_renovation_cost,
-    calculate_furnishing_cost,
+    calculate_total_cost,
     estimate_property_values,
     calculate_roi_with_split,
-    generate_monthly_projection
+    generate_monthly_projection,
+    calculate_share_investment
 )
 
 # Page configuration
@@ -58,9 +58,9 @@ with st.sidebar:
     )
 
     quality_level = st.selectbox(
-        "Quality Level",
+        "Package Level",
         options=['basic', 'medium', 'luxury'],
-        help="Choose the quality level for renovation and furnishing"
+        help="Choose the package level (Basic: 300 AED/sqft, Medium: 380 AED/sqft, Luxury: 780 AED/sqft)"
     )
 
     market_factor = st.slider(
@@ -85,29 +85,22 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Cost Breakdown")
-    renovation_cost = calculate_renovation_cost(square_feet, quality_level)
-    furnishing_cost = calculate_furnishing_cost(square_feet, quality_level)
+    total_cost = calculate_total_cost(square_feet, quality_level)
 
     # Display costs
     st.metric(
-        label="Renovation Cost",
-        value=f"AED {renovation_cost:,.2f}"
-    )
-    st.metric(
-        label="Furnishing Cost",
-        value=f"AED {furnishing_cost:,.2f}"
+        label="Total Package Cost",
+        value=f"AED {total_cost:,.2f}"
     )
 
     # Cost per sqft
-    total_cost_per_sqft = (renovation_cost + furnishing_cost) / square_feet
-    st.info(f"Total Cost per sq ft: AED {total_cost_per_sqft:.2f}")
+    st.info(f"Package rate: AED {total_cost/square_feet:.2f} per sq ft")
 
 with col2:
     st.subheader("Estimated Sale Prices")
     property_values = estimate_property_values(
         initial_investment,
-        renovation_cost,
-        furnishing_cost,
+        total_cost,
         market_factor
     )
 
@@ -127,8 +120,7 @@ st.header("Investment Analysis")
 roi_data = calculate_roi_with_split(
     initial_investment,
     property_values['moderate'],
-    renovation_cost,
-    furnishing_cost,
+    total_cost,
     holding_period
 )
 
@@ -152,11 +144,44 @@ with col5:
         value=f"{roi_data['annual_roi']:.2f}%"
     )
 
-# Total Investment Required
-st.metric(
-    label="Total Investment Required",
-    value=f"AED {initial_investment + renovation_cost + furnishing_cost:,.2f}"
+# Share Investment Section
+st.markdown("---")
+st.header("Share Investment Calculator")
+st.markdown("Invest in shares of the project and earn 0.5% monthly returns until property sale")
+
+total_investment = initial_investment + total_cost
+share_amount = st.number_input(
+    "Investment Amount (AED)",
+    min_value=100_000,
+    max_value=int(total_investment),
+    value=int(total_investment * 0.2),
+    step=50_000,
+    help="Enter the amount you want to invest in this project"
 )
+
+share_data = calculate_share_investment(total_investment, share_amount, holding_period)
+
+col6, col7, col8 = st.columns(3)
+
+with col6:
+    st.metric(
+        label="Project Share",
+        value=f"{share_data['share_percentage']:.2f}%"
+    )
+
+with col7:
+    st.metric(
+        label="Monthly Returns",
+        value=f"AED {share_data['monthly_returns']:,.2f}"
+    )
+
+with col8:
+    st.metric(
+        label="Total Returns (During Holding Period)",
+        value=f"AED {share_data['total_returns']:,.2f}"
+    )
+
+st.info(f"Effective Annual Return Rate: {share_data['effective_annual_return']:.2f}%")
 
 # Visualizations
 st.markdown("---")
@@ -190,10 +215,10 @@ fig1.update_layout(
 
 st.plotly_chart(fig1, use_container_width=True)
 
-# Pie chart for cost breakdown
+# Pie chart for investment breakdown
 costs_data = pd.DataFrame({
-    'Category': ['Initial Investment', 'Renovation Cost', 'Furnishing Cost'],
-    'Amount': [initial_investment, renovation_cost, furnishing_cost]
+    'Category': ['Initial Investment', 'Total Package Cost'],
+    'Amount': [initial_investment, total_cost]
 })
 
 fig2 = px.pie(

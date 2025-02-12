@@ -1,26 +1,16 @@
 import numpy as np
 
-def calculate_furnishing_cost(square_feet, quality_level):
-    """Calculate furnishing costs based on square footage and quality level."""
+def calculate_total_cost(square_feet, quality_level):
+    """Calculate total costs based on square footage and quality level in AED."""
     base_costs_aed = {
-        'basic': 100,    # AED per sq ft
-        'medium': 200,
-        'luxury': 400
+        'basic': 300,    # AED per sq ft
+        'medium': 380,
+        'luxury': 780
     }
     return square_feet * base_costs_aed[quality_level]
 
-def calculate_renovation_cost(square_feet, quality_level):
-    """Calculate renovation costs based on square footage and quality level in AED."""
-    base_costs_aed = {
-        'basic': 110,    # AED per sq ft
-        'medium': 183,    # ~50 USD to AED
-        'luxury': 367    # ~100 USD to AED
-    }
-    return square_feet * base_costs_aed[quality_level]
-
-def estimate_property_values(initial_value, renovation_cost, furnishing_cost, market_factor):
+def estimate_property_values(initial_value, total_cost, market_factor):
     """Estimate property values after renovation with different markup scenarios."""
-    total_cost = renovation_cost + furnishing_cost
     value_increase = total_cost * (1 + market_factor)
     base_value = initial_value + value_increase
 
@@ -30,23 +20,37 @@ def estimate_property_values(initial_value, renovation_cost, furnishing_cost, ma
         'optimistic': base_value * 1.35     # +35%
     }
 
-def calculate_roi_with_split(initial_investment, final_value, renovation_cost, furnishing_cost, holding_period):
+def calculate_roi_with_split(initial_investment, final_value, total_cost, holding_period):
     """Calculate ROI and profit split between investor and company."""
-    total_cost = initial_investment + renovation_cost + furnishing_cost
-    profit = final_value - total_cost
+    total_investment = initial_investment + total_cost
+    profit = final_value - total_investment
 
     # Split profit: 88% investor, 12% company
     investor_profit = profit * 0.88
     company_profit = profit * 0.12
 
     # Calculate annual ROI based on investor's portion
-    annual_roi = (investor_profit / total_cost) * (12 / holding_period) * 100
+    annual_roi = (investor_profit / total_investment) * (12 / holding_period) * 100
 
     return {
         'total_profit': profit,
         'investor_profit': investor_profit,
         'company_profit': company_profit,
         'annual_roi': annual_roi
+    }
+
+def calculate_share_investment(total_investment, share_amount, holding_period):
+    """Calculate share-based investment returns."""
+    share_percentage = (share_amount / total_investment) * 100
+    monthly_return_rate = 0.005  # 0.5% per month
+    monthly_returns = share_amount * monthly_return_rate
+    total_returns = monthly_returns * holding_period
+
+    return {
+        'share_percentage': share_percentage,
+        'monthly_returns': monthly_returns,
+        'total_returns': total_returns,
+        'effective_annual_return': monthly_return_rate * 12 * 100  # Convert to annual percentage
     }
 
 def generate_monthly_projection(initial_value, final_value, months):
