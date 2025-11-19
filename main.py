@@ -34,7 +34,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Header
-st.title("Real Estate Investment Simulator - UAE")
+st.title("Oria Real Estate Investment Simulator - UAE")
 st.markdown("---")
 
 # Sidebar for input parameters
